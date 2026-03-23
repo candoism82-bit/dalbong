@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>달봉이의 금융 계산기 모음 | 개발자 아빠가 만든 재테크 도구</title>
+<meta name="description" content="IRP·연금저축 세액공제, 달러 ETF 수익, 포트폴리오 배분 등 실용적인 금융 계산기를 무료로 제공합니다.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal:        #4a7c6f;
+    --teal-dark:   #2c3e50;
+    --teal-deeper: #1a2a26;
+    --teal-light:  #f2f6f5;
+    --teal-mid:    #e8efed;
+    --teal-border: #c5d8d3;
+    --teal-sub:    #8a9e99;
+    --accent:      #e8734a;
+    --accent2:     #5b8dd9;
+    --accent3:     #9b6dd4;
+    --text:        #1a2a26;
+    --text-muted:  #6b7c79;
+    --white:       #ffffff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--teal-light);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    background: var(--teal-dark);
+    padding: 52px 24px 44px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 80%, rgba(74,124,111,.25) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 60% at 80% 20%, rgba(91,141,217,.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-inner { position: relative; max-width: 600px; margin: 0 auto; }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12px;
+    color: rgba(255,255,255,.75);
+    font-weight: 500;
+    letter-spacing: .04em;
+    margin-bottom: 18px;
+  }
+  .hero-badge .dot {
+    width: 6px; height: 6px;
+    background: #6ee4b8;
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .5; transform: scale(.8); }
+  }
+
+  .hero h1 {
+    font-size: clamp(24px, 6vw, 36px);
+    font-weight: 900;
+    color: var(--white);
+    line-height: 1.25;
+    margin-bottom: 14px;
+    letter-spacing: -.01em;
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: #6ee4b8;
+  }
+  .hero p {
+    font-size: 14px;
+    color: rgba(255,255,255,.6);
+    line-height: 1.8;
+    max-width: 400px;
+    margin: 0 auto 22px;
+  }
+
+  .hero-stats {
+    display: inline-flex;
+    gap: 20px;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 40px;
+    padding: 10px 24px;
+  }
+  .hero-stats .stat {
+    text-align: center;
+  }
+  .hero-stats .stat-n {
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    font-weight: 500;
+    color: #6ee4b8;
+    line-height: 1.1;
+  }
+  .hero-stats .stat-l {
+    font-size: 10px;
+    color: rgba(255,255,255,.45);
+    margin-top: 2px;
+  }
+  .hero-stats .divider {
+    width: 1px;
+    background: rgba(255,255,255,.12);
+    align-self: stretch;
+  }
+
+  /* ── Blog link ── */
+  .blog-bar {
+    background: var(--teal);
+    text-align: center;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: rgba(255,255,255,.8);
+  }
+  .blog-bar a {
+    color: #6ee4b8;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .blog-bar a:hover { text-decoration: underline; }
+
+  /* ── Container ── */
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 16px 60px;
+  }
+
+  /* ── Section title ── */
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 36px 0 16px;
+  }
+  .section-head h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--teal-sub);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .section-head::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--teal-border);
+  }
+
+  /* ── Calculator Cards ── */
+  .calc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+  }
+
+  .calc-card {
+    background: var(--white);
+    border: 1.5px solid var(--teal-border);
+    border-radius: 14px;
+    padding: 22px;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform .18s, box-shadow .18s, border-color .18s;
+    position: relative;
+    overflow: hidden;
+  }
+  .calc-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--card-accent, var(--teal));
+    border-radius: 14px 14px 0 0;
+  }
+  .calc-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(44,62,50,.1);
+    border-color: var(--card-accent, var(--teal));
+  }
+
+  .calc-card.ready { --card-accent: var(--teal); }
+  .calc-card.coming { --card-accent: var(--teal-border); opacity: .7; pointer-events: none; }
+  .calc-card.coming-2 { --card-accent: var(--accent2); }
+  .calc-card.coming-3 { --card-accent: var(--accent3); }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .card-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+  .status-chip {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 12px;
+    letter-spacing: .04em;
+  }
+  .status-chip.live {
+    background: #d4f0e8;
+    color: #1a6b4a;
+  }
+  .status-chip.soon {
+    background: var(--teal-mid);
+    color: var(--teal-sub);
+  }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--teal-dark);
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+  .card-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--teal-mid);
+    color: var(--teal);
+  }
+  .tag.orange { background: #fdeee7; color: #c05a2a; }
+  .tag.blue   { background: #e7edfb; color: #3a5faa; }
+  .tag.purple { background: #f0ebfb; color: #6a3da0; }
+
+  .card-arrow {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 28px; height: 28px;
+    background: var(--teal-mid);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    transition: background .15s, transform .15s;
+  }
+  .calc-card:hover .card-arrow {
+    background: var(--teal);
+    transform: translate(2px, -2px);
+  }
+
+  /* ── Coming soon full card ── */
+  .coming-card {
+    background: var(--teal-mid);
+    border: 1.5px dashed var(--teal-border);
+    border-radius: 14px;
+    padding: 22px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    opacity: .65;
+  }
+  .coming-card .icon { font-size: 24px; }
+  .coming-card .info .ct { font-size: 14px; font-weight: 700; color: var(--teal-dark); margin-bottom: 3px; }
+  .coming-card .info .cd { font-size: 12px; color: var(--text-muted); }
+
+  /* ── Disclaimer ── */
+  .disclaimer {
+    background: #fff8f0;
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #7a4a2e;
+    line-height: 1.8;
+    margin-top: 28px;
+  }
+  .disclaimer strong { color: var(--accent); }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 24px 16px;
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 2;
+    border-top: 1px solid var(--teal-border);
+    background: var(--white);
+  }
+  footer a { color: var(--teal); text-decoration: none; }
+
+  /* ── Page load animation ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .calc-card, .coming-card {
+    animation: fadeUp .4s ease both;
+  }
+  .calc-card:nth-child(1) { animation-delay: .05s; }
+  .calc-card:nth-child(2) { animation-delay: .10s; }
+  .calc-card:nth-child(3) { animation-delay: .15s; }
+  .calc-card:nth-child(4) { animation-delay: .20s; }
+  .calc-card:nth-child(5) { animation-delay: .25s; }
+  .calc-card:nth-child(6) { animation-delay: .30s; }
+
+  @media (max-width: 480px) {
+    .hero-stats { gap: 14px; padding: 8px 18px; }
+    .calc-grid  { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      개발자 아빠가 직접 만든 도구
+    </div>
+    <h1>달봉이의<br><em>금융 계산기</em> 모음</h1>
+    <p>복잡한 엑셀 없이, 숫자만 입력하면 바로 계산됩니다.<br>모든 도구는 무료이며 데이터를 저장하지 않습니다.</p>
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-n" id="live-count">1</div>
+        <div class="stat-l">운영 중</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat">
+        <div class="stat-n">4</div>
+        <div class="stat-l">출시 예정</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat">
+        <div class="stat-n">0</div>
+        <div class="stat-l">광고·수집</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Blog bar -->
+<div class="blog-bar">
+  각 계산기의 활용법과 세금 전략은 →
+  <a href="https://dalbong.tistory.com" target="_blank">달봉이의 IT / 재테크 / 육아 블로그</a>에서 확인하세요
+</div>
+
+<div class="container">
+
+  <!-- 운영 중 -->
+  <div class="section-head"><h2>🟢 운영 중</h2></div>
+
+  <div class="calc-grid">
+
+    <!-- IRP 계산기 -->
+    <a class="calc-card ready" href="./irp-calculator.html">
+      <div class="card-top">
+        <div class="card-icon">💰</div>
+        <span class="status-chip live">LIVE</span>
+      </div>
+      <div class="card-title">IRP · 연금저축<br>세액공제 계산기</div>
+      <div class="card-desc">
+        총급여와 납입액을 입력하면 연말정산 예상 환급액을 즉시 계산합니다.
+        16.5% / 13.2% 공제율 자동 적용, 900만원 한도 실시간 체크.
+      </div>
+      <div class="card-tags">
+        <span class="tag">IRP</span>
+        <span class="tag">연금저축</span>
+        <span class="tag">세액공제</span>
+        <span class="tag">연말정산</span>
+      </div>
+      <div class="card-arrow">→</div>
+    </a>
+
+  </div>
+
+
+  <!-- 출시 예정 -->
+  <div class="section-head"><h2>🔜 출시 예정</h2></div>
+
+  <div class="calc-grid">
+
+    <!-- 달러 ETF 수익 시뮬레이터 -->
+    <div class="calc-card coming coming-2" style="pointer-events:none;">
+      <div class="card-top">
+        <div class="card-icon">💵</div>
+        <span class="status-chip soon">준비 중</span>
+      </div>
+      <div class="card-title">달러 ETF<br>환율 수익 시뮬레이터</div>
+      <div class="card-desc">
+        매수 환율·현재 환율·ETF 수익률을 입력하면 원화 기준 실제 수익을 계산합니다.
+      </div>
+      <div class="card-tags">
+        <span class="tag blue">달러ETF</span>
+        <span class="tag blue">환율</span>
+        <span class="tag blue">SOFR</span>
+      </div>
+    </div>
+
+    <!-- 포트폴리오 배분 계산기 -->
+    <div class="calc-card coming coming-3" style="pointer-events:none;">
+      <div class="card-top">
+        <div class="card-icon">📊</div>
+        <span class="status-chip soon">준비 중</span>
+      </div>
+      <div class="card-title">포트폴리오 배분<br>계산기</div>
+      <div class="card-desc">
+        자산 비중을 입력하면 기대수익률·변동성·리밸런싱 금액을 시각화합니다.
+      </div>
+      <div class="card-tags">
+        <span class="tag purple">포트폴리오</span>
+        <span class="tag purple">자산배분</span>
+        <span class="tag purple">리밸런싱</span>
+      </div>
+    </div>
+
+    <!-- 연금 수령 계산기 -->
+    <div class="calc-card coming" style="pointer-events:none;">
+      <div class="card-top">
+        <div class="card-icon">🏦</div>
+        <span class="status-chip soon">준비 중</span>
+      </div>
+      <div class="card-title">연금 수령액<br>시뮬레이터</div>
+      <div class="card-desc">
+        납입 기간·수익률을 설정하면 55세 이후 예상 연금 수령액을 계산합니다.
+      </div>
+      <div class="card-tags">
+        <span class="tag">연금</span>
+        <span class="tag">노후준비</span>
+        <span class="tag">복리계산</span>
+      </div>
+    </div>
+
+    <!-- ISA 절세 계산기 -->
+    <div class="calc-card coming coming-2" style="pointer-events:none;">
+      <div class="card-top">
+        <div class="card-icon">🛡️</div>
+        <span class="status-chip soon">준비 중</span>
+      </div>
+      <div class="card-title">ISA 절세 효과<br>비교 계산기</div>
+      <div class="card-desc">
+        일반 계좌 vs ISA 계좌에서 ETF 투자 시 세금 차이를 한눈에 비교합니다.
+      </div>
+      <div class="card-tags">
+        <span class="tag blue">ISA</span>
+        <span class="tag blue">절세</span>
+        <span class="tag blue">ETF</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 면책 -->
+  <div class="disclaimer">
+    ⚠️ <strong>면책 안내:</strong> 이 사이트의 모든 계산기는 일반적인 참고 목적으로 제공되며, 투자 권유 또는 세무·법률 조언이 아닙니다.
+    실제 세액공제·수익은 개인 상황에 따라 다를 수 있습니다. 정확한 처리는 국세청 홈택스 또는 세무사를 이용하세요.
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  <div>만든 사람: <a href="https://dalbong.tistory.com" target="_blank">달봉이의 IT / 재테크 / 육아 큐레이션</a></div>
+  <div>오류·제안은 블로그 댓글로 알려주세요 🙏</div>
+  <div style="margin-top:4px; color:#bbb;">© 2026 dalbong.github.io — 광고 없음 · 데이터 수집 없음</div>
+</footer>
+
+</body>
+</html>
