@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>포트폴리오 배분 계산기 | 달봉이의 금융 도구</title>
+<meta name="description" content="자산 비중을 설정하고 현재 보유금액을 입력하면 리밸런싱 매수·매도 금액을 즉시 계산합니다.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #111a17;
+  --bg2:       #18251f;
+  --bg3:       #1f2e28;
+  --card:      #1e2d27;
+  --card2:     #243529;
+  --border:    #2e4238;
+  --teal:      #4dc99a;
+  --teal-dim:  #2e7a5a;
+  --teal-dark: #1a4030;
+  --text:      #e8f0ec;
+  --text2:     #8aa89a;
+  --text3:     #566e62;
+  --white:     #ffffff;
+  --red:       #f07070;
+  --blue:      #6ab0f5;
+  --orange:    #f0a060;
+  --purple:    #c08af0;
+  --yellow:    #f0d060;
+  --pink:      #f07ab0;
+
+  /* 자산 클래스 색상 */
+  --c0: #4dc99a;  /* 국내주식 */
+  --c1: #6ab0f5;  /* 해외주식 */
+  --c2: #f0a060;  /* 채권·국채 */
+  --c3: #f0d060;  /* 달러ETF */
+  --c4: #c08af0;  /* 현금·예금 */
+  --c5: #f07ab0;  /* 기타 */
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+/* ── Header ── */
+header {
+  background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 28px 20px 24px;
+  text-align: center;
+}
+.badge {
+  display: inline-block;
+  background: var(--teal-dark);
+  color: var(--teal);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: 3px 12px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  border: 1px solid var(--teal-dim);
+}
+header h1 {
+  font-size: clamp(20px, 5vw, 28px);
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+header h1 em { font-style: normal; color: var(--teal); }
+header p {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+}
+.year-tag {
+  display: inline-block;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 8px;
+}
+
+/* ── Container ── */
+.container { max-width: 700px; margin: 0 auto; padding: 0 16px; }
+
+/* ── Section ── */
+.section { margin-top: 20px; }
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Card ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
+}
+
+/* ── Total input ── */
+.total-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.total-row label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  min-width: 80px;
+}
+.input-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+.input-wrap input {
+  width: 100%;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 10px 46px 10px 14px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  -webkit-appearance: none;
+}
+.input-wrap input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(77,201,154,.12);
+}
+.input-wrap input::placeholder { color: var(--text3); }
+.input-wrap .unit {
+  position: absolute;
+  right: 12px;
+  font-size: 12px;
+  color: var(--text3);
+  pointer-events: none;
+}
+
+/* ── Asset rows ── */
+.asset-list { display: flex; flex-direction: column; gap: 10px; }
+
+.asset-row {
+  display: grid;
+  grid-template-columns: 16px 1fr 90px 110px 90px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color .15s;
+}
+.asset-row:focus-within { border-color: var(--teal-dim); }
+
+.asset-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.asset-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+.asset-name .sub {
+  display: block;
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 400;
+  margin-top: 1px;
+}
+
+/* 비중 슬라이더 */
+.pct-wrap { display: flex; align-items: center; gap: 7px; }
+.pct-wrap input[type=number] {
+  width: 56px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 6px;
+  text-align: right;
+  outline: none;
+  -webkit-appearance: none;
+}
+.pct-wrap input[type=number]:focus { border-color: var(--teal); }
+.pct-wrap span { font-size: 12px; color: var(--text3); }
+
+/* 현재 보유 입력 */
+.cur-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 5px 8px;
+  width: 100%;
+  outline: none;
+  text-align: right;
+  -webkit-appearance: none;
+}
+.cur-input:focus { border-color: var(--teal); }
+.cur-input::placeholder { color: var(--text3); font-size: 11px; }
+
+/* 리밸런싱 결과 칩 */
+.rebal-chip {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-align: center;
+  min-width: 80px;
+}
+.rebal-chip.buy    { background: rgba(77,201,154,.12); color: var(--teal); }
+.rebal-chip.sell   { background: rgba(240,112,112,.12); color: var(--red); }
+.rebal-chip.hold   { background: var(--bg3); color: var(--text3); }
+.rebal-chip.none   { background: transparent; color: var(--text3); font-size: 10px; }
+
+/* ── 비중 합계 경고 ── */
+.pct-sum-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-top: 8px;
+  transition: background .2s;
+}
+.pct-sum-bar.ok   { background: rgba(77,201,154,.08); color: var(--teal); }
+.pct-sum-bar.over { background: rgba(240,112,112,.1);  color: var(--red); }
+.pct-sum-bar.under{ background: rgba(106,176,245,.08); color: var(--blue); }
+.pct-sum-bar .sum-val { font-family: 'DM Mono', monospace; font-weight: 700; font-size: 14px; }
+
+/* ── Calc Button ── */
+.btn-calc {
+  width: 100%;
+  padding: 14px;
+  background: var(--teal);
+  color: var(--bg);
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Noto Sans KR', sans-serif;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background .15s, transform .1s, box-shadow .15s;
+  box-shadow: 0 2px 12px rgba(77,201,154,.25);
+  letter-spacing: .02em;
+}
+.btn-calc:hover { background: #3db87e; transform: translateY(-1px); box-shadow: 0 4px 18px rgba(77,201,154,.35); }
+.btn-calc:active { transform: translateY(0); }
+
+/* ── Result ── */
+#result { display: none; margin-top: 20px; }
+
+/* 도넛 차트 + 요약 */
+.chart-summary {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 20px;
+  align-items: center;
+  padding: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.chart-box {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+.chart-box canvas { display: block; }
+.chart-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+.chart-center .cv-label { font-size: 10px; color: var(--text3); }
+.chart-center .cv-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--white);
+  line-height: 1.2;
+  margin-top: 3px;
+}
+
+.legend { display: flex; flex-direction: column; gap: 8px; }
+.legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.legend-left { display: flex; align-items: center; gap: 7px; }
+.legend-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.legend-name { font-size: 12px; color: var(--text2); }
+.legend-right {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 리밸런싱 요약 카드 */
+.rebal-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.rs-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.rs-card .rs-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+.rs-card .rs-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 18px;
+  font-weight: 600;
+}
+.rs-card .rs-val.buy  { color: var(--teal); }
+.rs-card .rs-val.sell { color: var(--red); }
+.rs-card .rs-val.neu  { color: var(--text2); }
+
+/* 리밸런싱 상세 테이블 */
+.rebal-table {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.rebal-table .rt-head {
+  display: grid;
+  grid-template-columns: 1fr 80px 90px 90px 90px;
+  gap: 4px;
+  padding: 10px 16px;
+  background: var(--card2);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--text3);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.rt-row {
+  display: grid;
+  grid-template-columns: 1fr 80px 90px 90px 90px;
+  gap: 4px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  transition: background .1s;
+}
+.rt-row:last-child { border-bottom: none; }
+.rt-row:hover { background: var(--card2); }
+.rt-cell { font-size: 12px; color: var(--text2); }
+.rt-cell.name { font-size: 13px; color: var(--text); font-weight: 500; display: flex; align-items: center; gap: 6px; }
+.rt-cell.mono { font-family: 'DM Mono', monospace; font-size: 12px; }
+.rt-cell.buy  { color: var(--teal);  font-weight: 600; }
+.rt-cell.sell { color: var(--red);   font-weight: 600; }
+.rt-cell.hold { color: var(--text3); }
+
+/* ── Tip box ── */
+.tip-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--text2);
+  margin-top: 12px;
+}
+.tip-box strong { color: var(--teal); }
+
+/* ── Disclaimer ── */
+.disclaimer {
+  background: rgba(240,112,112,.06);
+  border-left: 3px solid rgba(240,112,112,.4);
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: #b08080;
+  line-height: 1.7;
+  margin-top: 20px;
+}
+
+/* ── Footer ── */
+footer {
+  text-align: center;
+  margin-top: 28px;
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.9;
+}
+footer a { color: var(--teal); text-decoration: none; }
+
+/* ── Animation ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp .35s ease both; }
+.fade-up:nth-child(2) { animation-delay: .06s; }
+.fade-up:nth-child(3) { animation-delay: .12s; }
+
+/* 컬럼 레이블 헤더 */
+.col-labels {
+  display: grid;
+  grid-template-columns: 16px 1fr 90px 110px 90px;
+  gap: 10px;
+  padding: 0 14px;
+  margin-bottom: 4px;
+}
+.col-labels span {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text3);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.col-labels span:nth-child(3),
+.col-labels span:nth-child(4),
+.col-labels span:nth-child(5) { text-align: right; }
+
+@media (max-width: 540px) {
+  .chart-summary { grid-template-columns: 1fr; justify-items: center; }
+  .rebal-table .rt-head,
+  .rt-row {
+    grid-template-columns: 1fr 70px 80px 80px;
+  }
+  .rebal-table .rt-head span:nth-child(4),
+  .rt-row .rt-cell:nth-child(4) { display: none; }
+  .col-labels { grid-template-columns: 16px 1fr 80px 100px 80px; }
+  .asset-row  { grid-template-columns: 16px 1fr 80px 100px 80px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">📊 금융 계산기</div>
+  <h1>포트폴리오 <em>배분 계산기</em></h1>
+  <p>목표 비중과 현재 보유금액을 입력하면<br>리밸런싱 매수·매도 금액을 즉시 계산합니다</p>
+  <div class="year-tag">자산배분 · 리밸런싱 · 시각화</div>
+</header>
+
+<div class="container">
+
+  <!-- STEP 1: 총 투자금 -->
+  <div class="section">
+    <div class="section-title">STEP 1 &nbsp;총 투자 목표금액</div>
+    <div class="card">
+      <div class="total-row">
+        <label>총 투자금</label>
+        <div class="input-wrap">
+          <input type="number" id="totalAmt" placeholder="10000" min="0" step="100">
+          <span class="unit">만원</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: 자산 배분 -->
+  <div class="section">
+    <div class="section-title">STEP 2 &nbsp;목표 비중 · 현재 보유금액 입력</div>
+
+    <div class="col-labels">
+      <span></span>
+      <span>자산</span>
+      <span style="text-align:right">목표비중</span>
+      <span style="text-align:right">현재보유(만원)</span>
+      <span style="text-align:right">리밸런싱</span>
+    </div>
+
+    <div class="asset-list" id="assetList">
+      <!-- JS로 생성 -->
+    </div>
+
+    <div class="pct-sum-bar ok" id="pctSumBar">
+      <span>비중 합계</span>
+      <span class="sum-val" id="pctSumVal">0%</span>
+    </div>
+
+    <button class="btn-calc" onclick="calculate()">📊 리밸런싱 계산하기</button>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result">
+
+    <!-- 도넛 차트 + 범례 -->
+    <div class="chart-summary fade-up">
+      <div class="chart-box">
+        <canvas id="donut" width="160" height="160"></canvas>
+        <div class="chart-center">
+          <div class="cv-label">총 목표금액</div>
+          <div class="cv-val" id="cv-total">—</div>
+        </div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <!-- 매수·매도 요약 -->
+    <div class="rebal-summary fade-up">
+      <div class="rs-card">
+        <div class="rs-label">총 매수 필요금액</div>
+        <div class="rs-val buy" id="totalBuy">—</div>
+      </div>
+      <div class="rs-card">
+        <div class="rs-label">총 매도 필요금액</div>
+        <div class="rs-val sell" id="totalSell">—</div>
+      </div>
+      <div class="rs-card">
+        <div class="rs-label">현재 총 보유금액</div>
+        <div class="rs-val neu" id="totalCur">—</div>
+      </div>
+      <div class="rs-card">
+        <div class="rs-label">목표금액 대비 차이</div>
+        <div class="rs-val neu" id="totalDiff">—</div>
+      </div>
+    </div>
+
+    <!-- 상세 테이블 -->
+    <div class="rebal-table fade-up">
+      <div class="rt-head">
+        <span>자산</span>
+        <span style="text-align:right">비중</span>
+        <span style="text-align:right">목표금액</span>
+        <span style="text-align:right">현재보유</span>
+        <span style="text-align:right">리밸런싱</span>
+      </div>
+      <div id="rtBody"></div>
+    </div>
+
+    <div class="tip-box fade-up">
+      <div><strong>💡 리밸런싱 활용 팁</strong></div>
+      <div>📌 <strong>+는 매수(사야 할 금액)</strong>, <strong>-는 매도(팔아야 할 금액)</strong>입니다</div>
+      <div>📌 ISA·IRP 계좌 내 자산은 매도 시 세금이 없으니 리밸런싱 우선 활용하세요</div>
+      <div>📌 보통 목표 비중에서 ±5% 이상 벗어났을 때 리밸런싱을 고려합니다</div>
+      <div>📌 달러 ETF는 환율 변동도 함께 고려해서 리밸런싱 시점을 판단하세요</div>
+    </div>
+
+    <div class="disclaimer">
+      ⚠️ 이 계산기는 참고용 도구이며 투자 권유가 아닙니다. 실제 투자는 본인의 판단과 책임하에 결정하세요.
+    </div>
+
+  </div><!-- /result -->
+
+</div><!-- /container -->
+
+<footer>
+  <p>만든 사람: <a href="https://dalbong.tistory.com" target="_blank">달봉이의 IT / 재테크 / 육아 큐레이션</a></p>
+  <p><a href="https://candoism82-bit.github.io/dalbong/" target="_blank">← 금융 계산기 모음으로 돌아가기</a></p>
+  <p style="margin-top:4px;color:#3a5248;">© 2026 dalbong — 광고 없음 · 데이터 수집 없음</p>
+</footer>
+
+<script>
+// ── 자산 데이터 ──
+const ASSETS = [
+  { id:'a0', name:'국내주식',  sub:'코스피·코스닥 ETF',   color:'#4dc99a', defPct:20 },
+  { id:'a1', name:'해외주식',  sub:'S&P500·나스닥 ETF',  color:'#6ab0f5', defPct:30 },
+  { id:'a2', name:'채권·국채', sub:'개인투자용국채·ETF',  color:'#f0a060', defPct:20 },
+  { id:'a3', name:'달러 ETF',  sub:'SOFR·달러인덱스',    color:'#f0d060', defPct:15 },
+  { id:'a4', name:'현금·예금', sub:'CMA·파킹통장',       color:'#c08af0', defPct:10 },
+  { id:'a5', name:'기타',      sub:'리츠·금·코인 등',    color:'#f07ab0', defPct:5  },
+];
+
+// ── 자산 행 생성 ──
+function buildRows() {
+  const list = document.getElementById('assetList');
+  list.innerHTML = '';
+  ASSETS.forEach((a, i) => {
+    const row = document.createElement('div');
+    row.className = 'asset-row';
+    row.id = 'row_' + a.id;
+    row.innerHTML = `
+      <div class="asset-dot" style="background:${a.color}"></div>
+      <div class="asset-name">${a.name}<span class="sub">${a.sub}</span></div>
+      <div class="pct-wrap">
+        <input type="number" id="pct_${a.id}" value="${a.defPct}" min="0" max="100" step="1"
+               oninput="onPctChange()" style="color:${a.color}">
+        <span>%</span>
+      </div>
+      <div>
+        <input class="cur-input" type="number" id="cur_${a.id}" placeholder="0" min="0" step="10">
+      </div>
+      <div class="rebal-chip none" id="chip_${a.id}">—</div>
+    `;
+    list.appendChild(row);
+  });
+  onPctChange();
+}
+
+// ── 비중 합계 감시 ──
+function onPctChange() {
+  const sum = ASSETS.reduce((acc, a) => acc + (parseFloat(document.getElementById('pct_'+a.id).value)||0), 0);
+  const bar  = document.getElementById('pctSumBar');
+  const val  = document.getElementById('pctSumVal');
+  val.textContent = sum.toFixed(0) + '%';
+  bar.className   = 'pct-sum-bar ' + (sum===100?'ok': sum>100?'over':'under');
+  // 실시간 칩 업데이트 (총투자금 있을 때)
+  const total = parseFloat(document.getElementById('totalAmt').value)||0;
+  if (total > 0) liveChips(total, sum);
+}
+
+function liveChips(total, sum) {
+  ASSETS.forEach(a => {
+    const pct = (parseFloat(document.getElementById('pct_'+a.id).value)||0) / (sum||100);
+    const cur = parseFloat(document.getElementById('cur_'+a.id).value)||0;
+    const target = total * pct * (sum === 100 ? 1 : sum/100);
+    const diff = target - cur;
+    updateChip(a.id, diff);
+  });
+}
+
+function updateChip(id, diff) {
+  const chip = document.getElementById('chip_'+id);
+  if (!chip) return;
+  const abs = Math.abs(diff);
+  if (abs < 1) {
+    chip.className = 'rebal-chip hold';
+    chip.textContent = '유지';
+  } else if (diff > 0) {
+    chip.className = 'rebal-chip buy';
+    chip.textContent = '+' + fmt(Math.round(diff)) + '만';
+  } else {
+    chip.className = 'rebal-chip sell';
+    chip.textContent = '-' + fmt(Math.round(abs)) + '만';
+  }
+}
+
+// ── 핵심 계산 ──
+function calculate() {
+  const total = parseFloat(document.getElementById('totalAmt').value) || 0;
+  const sum   = ASSETS.reduce((acc,a)=>acc+(parseFloat(document.getElementById('pct_'+a.id).value)||0),0);
+
+  if (total <= 0) { alert('총 투자금을 입력해주세요.'); return; }
+  if (sum <= 0)   { alert('목표 비중을 입력해주세요.'); return; }
+
+  const scale = 100 / sum; // 비중 합계가 100이 아닌 경우 정규화
+
+  const items = ASSETS.map(a => {
+    const rawPct  = parseFloat(document.getElementById('pct_'+a.id).value)||0;
+    const pct     = rawPct * scale;           // 정규화된 비중
+    const target  = total * pct / 100;
+    const cur     = parseFloat(document.getElementById('cur_'+a.id).value)||0;
+    const diff    = target - cur;
+    return { ...a, rawPct, pct, target, cur, diff };
+  });
+
+  const totalCur  = items.reduce((acc,i)=>acc+i.cur, 0);
+  const totalBuy  = items.filter(i=>i.diff>0).reduce((acc,i)=>acc+i.diff,0);
+  const totalSell = items.filter(i=>i.diff<0).reduce((acc,i)=>acc+Math.abs(i.diff),0);
+  const totalDiff = total - totalCur;
+
+  // ── 결과 표시 ──
+  document.getElementById('result').style.display = 'block';
+
+  // 요약 카드
+  document.getElementById('cv-total').textContent   = fmt(total) + '만';
+  document.getElementById('totalBuy').textContent   = '+' + fmt(Math.round(totalBuy))  + '만원';
+  document.getElementById('totalSell').textContent  = '-' + fmt(Math.round(totalSell)) + '만원';
+  document.getElementById('totalCur').textContent   = fmt(Math.round(totalCur)) + '만원';
+  const diffEl = document.getElementById('totalDiff');
+  diffEl.textContent = (totalDiff>=0?'+':'') + fmt(Math.round(totalDiff)) + '만원';
+  diffEl.className = 'rs-val ' + (Math.abs(totalDiff)<1?'neu': totalDiff>0?'buy':'sell');
+
+  // 도넛 차트
+  drawDonut(items);
+
+  // 범례
+  const legend = document.getElementById('legend');
+  legend.innerHTML = items.filter(i=>i.pct>0).map(i=>`
+    <div class="legend-item">
+      <div class="legend-left">
+        <div class="legend-dot" style="background:${i.color}"></div>
+        <span class="legend-name">${i.name}</span>
+      </div>
+      <span class="legend-right">${i.pct.toFixed(1)}% · ${fmt(Math.round(i.target))}만</span>
+    </div>
+  `).join('');
+
+  // 상세 테이블
+  const body = document.getElementById('rtBody');
+  body.innerHTML = items.map(i => {
+    const cls = Math.abs(i.diff)<1 ? 'hold' : i.diff>0 ? 'buy' : 'sell';
+    const diffStr = Math.abs(i.diff)<1 ? '—' :
+                    i.diff>0 ? '+'+fmt(Math.round(i.diff))+'만' :
+                               '-'+fmt(Math.round(Math.abs(i.diff)))+'만';
+    return `<div class="rt-row">
+      <div class="rt-cell name">
+        <div class="asset-dot" style="background:${i.color};width:8px;height:8px;border-radius:50%;flex-shrink:0;"></div>
+        ${i.name}
+      </div>
+      <div class="rt-cell mono" style="text-align:right">${i.pct.toFixed(1)}%</div>
+      <div class="rt-cell mono" style="text-align:right">${fmt(Math.round(i.target))}만</div>
+      <div class="rt-cell mono" style="text-align:right">${fmt(Math.round(i.cur))}만</div>
+      <div class="rt-cell mono ${cls}" style="text-align:right">${diffStr}</div>
+    </div>`;
+  }).join('');
+
+  // 행 칩 업데이트
+  items.forEach(i => updateChip(i.id, i.diff));
+
+  // 스크롤
+  setTimeout(()=>{
+    document.getElementById('result').scrollIntoView({behavior:'smooth', block:'nearest'});
+  }, 100);
+}
+
+// ── 도넛 차트 ──
+function drawDonut(items) {
+  const canvas = document.getElementById('donut');
+  const ctx    = canvas.getContext('2d');
+  const cx = 80, cy = 80, r = 68, inner = 46;
+
+  ctx.clearRect(0, 0, 160, 160);
+
+  const visible = items.filter(i => i.pct > 0);
+  if (!visible.length) return;
+
+  let startAngle = -Math.PI / 2;
+  const gap = 0.025;
+
+  visible.forEach(item => {
+    const slice = (item.pct / 100) * (Math.PI * 2) - gap;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, startAngle + slice);
+    ctx.closePath();
+    // 내부 원 마스킹
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = item.color;
+    ctx.fill();
+    ctx.restore();
+    startAngle += slice + gap;
+  });
+
+  // 내부 원 마스크
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, inner, 0, Math.PI * 2);
+  ctx.fillStyle = '#1e2d27';
+  ctx.fill();
+  ctx.restore();
+}
+
+// ── 유틸 ──
+function fmt(n) { return Number(n).toLocaleString('ko-KR'); }
+
+// ── 초기화 ──
+buildRows();
+document.getElementById('totalAmt').addEventListener('input', onPctChange);
+</script>
+</body>
+</html>
