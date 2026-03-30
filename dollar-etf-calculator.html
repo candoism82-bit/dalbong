@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>달러 ETF 환율 수익 시뮬레이터 | 달봉이의 금융 도구</title>
+<meta name="description" content="매수 환율, 현재 환율, ETF 수익률을 입력하면 환차익과 ETF 수익을 분리해서 계산해 드립니다.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #13100a;
+  --bg2:      #1c1710;
+  --bg3:      #241e14;
+  --card:     #1e1a10;
+  --card2:    #27210f;
+  --border:   #3a3018;
+  --gold:     #d4a017;
+  --gold-dim: #7a5c0a;
+  --gold-dk:  #2a2008;
+  --gold-lt:  #f5c842;
+  --amber:    #e8841a;
+  --green:    #4dc99a;
+  --red:      #e85a4d;
+  --blue:     #6ab0f5;
+  --text:     #f0e8d0;
+  --text2:    #a09070;
+  --text3:    #5a5030;
+  --white:    #ffffff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+/* ── Header ── */
+header {
+  background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 30px 20px 26px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+header::before {
+  content: '$';
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  font-size: 160px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 600;
+  color: rgba(212,160,23,.05);
+  line-height: 1;
+  pointer-events: none;
+}
+.badge {
+  display: inline-block;
+  background: var(--gold-dk);
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: 3px 12px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  border: 1px solid var(--gold-dim);
+}
+header h1 {
+  font-size: clamp(20px, 5vw, 28px);
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+header h1 em { font-style: normal; color: var(--gold-lt); }
+header p { font-size: 13px; color: var(--text2); line-height: 1.7; }
+.year-tag {
+  display: inline-block;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 8px;
+}
+
+/* ── Container ── */
+.container { max-width: 680px; margin: 0 auto; padding: 0 16px; }
+
+/* ── Section ── */
+.section { margin-top: 20px; }
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Card ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
+}
+
+/* ── Input ── */
+.form-group { margin-bottom: 18px; }
+.form-group:last-child { margin-bottom: 0; }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+label .sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text3);
+  margin-left: 5px;
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.input-wrap input {
+  width: 100%;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 10px 46px 10px 14px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  -webkit-appearance: none;
+}
+.input-wrap input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212,160,23,.12);
+}
+.input-wrap input::placeholder { color: var(--text3); font-size: 13px; }
+.input-wrap .unit {
+  position: absolute;
+  right: 12px;
+  font-size: 12px;
+  color: var(--text3);
+  pointer-events: none;
+  font-weight: 500;
+}
+
+.input-hint {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 5px;
+  line-height: 1.5;
+}
+.input-hint.up   { color: var(--green); }
+.input-hint.down { color: var(--red); }
+
+/* ── 환율 차이 인디케이터 ── */
+.fx-diff {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 10px;
+  color: var(--text2);
+  transition: all .2s;
+}
+.fx-diff.up   { color: var(--green); background: rgba(77,201,154,.08); border-color: rgba(77,201,154,.2); }
+.fx-diff.down { color: var(--red);   background: rgba(232,90,77,.08);  border-color: rgba(232,90,77,.2); }
+
+/* ── 탭 (계좌 종류) ── */
+.tab-group {
+  display: flex;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+.tab-btn {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Noto Sans KR', sans-serif;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.tab-btn.active {
+  background: var(--gold-dk);
+  color: var(--gold-lt);
+}
+
+/* ── Slider ── */
+.slider-group { margin-bottom: 18px; }
+.slider-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.slider-label-row label { margin-bottom: 0; }
+.slider-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold-lt);
+}
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  background: var(--gold);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(212,160,23,.4);
+  transition: transform .1s;
+}
+input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+/* ── Calc Button ── */
+.btn-calc {
+  width: 100%;
+  padding: 14px;
+  background: var(--gold);
+  color: var(--bg);
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Noto Sans KR', sans-serif;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background .15s, transform .1s, box-shadow .15s;
+  box-shadow: 0 2px 14px rgba(212,160,23,.3);
+  letter-spacing: .02em;
+}
+.btn-calc:hover { background: var(--gold-lt); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(212,160,23,.45); }
+.btn-calc:active { transform: translateY(0); }
+
+/* ── Result ── */
+#result { display: none; margin-top: 20px; }
+
+/* 메인 결과 헤더 */
+.result-main {
+  background: linear-gradient(135deg, var(--card) 0%, var(--card2) 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.result-main::after {
+  content: '₩';
+  position: absolute;
+  right: -15px; bottom: -25px;
+  font-size: 110px;
+  font-weight: 900;
+  color: rgba(212,160,23,.05);
+  font-family: 'DM Mono', monospace;
+  line-height: 1;
+  pointer-events: none;
+}
+.result-main .label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+.result-main .total-profit {
+  font-family: 'DM Mono', monospace;
+  font-size: clamp(28px, 7vw, 40px);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+}
+.result-main .total-profit.pos { color: var(--green); }
+.result-main .total-profit.neg { color: var(--red); }
+.result-main .total-profit .unit { font-size: 16px; opacity: .7; margin-left: 4px; }
+.result-main .rate-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.rate-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'DM Mono', monospace;
+}
+.rate-chip.pos { background: rgba(77,201,154,.12); color: var(--green); }
+.rate-chip.neg { background: rgba(232,90,77,.12);  color: var(--red); }
+.rate-chip.neu { background: var(--gold-dk);        color: var(--gold); }
+
+/* 분해 그리드 */
+.breakdown-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.bd-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.bd-card .bd-label {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 500;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.bd-card .bd-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 16px;
+  font-weight: 600;
+}
+.bd-card .bd-val.pos  { color: var(--green); }
+.bd-card .bd-val.neg  { color: var(--red); }
+.bd-card .bd-val.gold { color: var(--gold-lt); }
+.bd-card .bd-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 3px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* 상세 내역 테이블 */
+.detail-table {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.detail-table .dt-head {
+  background: var(--card2);
+  padding: 9px 16px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--text3);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.dt-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  font-size: 13px;
+}
+.dt-row:last-child { border-bottom: none; }
+.dt-row .dt-label { color: var(--text2); }
+.dt-row .dt-val {
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  color: var(--text);
+}
+.dt-row .dt-val.pos  { color: var(--green); font-weight: 700; }
+.dt-row .dt-val.neg  { color: var(--red);   font-weight: 700; }
+.dt-row .dt-val.gold { color: var(--gold-lt); }
+.dt-row.total { background: var(--card2); }
+.dt-row.total .dt-label { font-weight: 700; color: var(--text); }
+
+/* 세금 비교 */
+.tax-compare {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.tax-compare .tc-head {
+  background: var(--gold-dk);
+  padding: 9px 16px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--gold);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+.tc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.tc-row:last-child { border-bottom: none; }
+.tc-row .tc-label { color: var(--text2); }
+.tc-row .tc-val {
+  font-family: 'DM Mono', monospace;
+  font-weight: 600;
+  color: var(--green);
+}
+.tc-row .tc-val.less { color: var(--text2); text-decoration: line-through; font-weight: 400; }
+
+/* 팁 박스 */
+.tip-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+.tip-box strong { color: var(--gold-lt); }
+
+/* 면책 */
+.disclaimer {
+  background: rgba(232,90,77,.06);
+  border-left: 3px solid rgba(232,90,77,.3);
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: #a06060;
+  line-height: 1.7;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  margin-top: 28px;
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.9;
+}
+footer a { color: var(--gold); text-decoration: none; }
+
+/* Animation */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp .35s ease both; }
+.fade-up:nth-child(2) { animation-delay: .06s; }
+.fade-up:nth-child(3) { animation-delay: .12s; }
+.fade-up:nth-child(4) { animation-delay: .18s; }
+
+@media (max-width: 480px) {
+  .form-row { grid-template-columns: 1fr; }
+  .breakdown-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">💵 금융 계산기</div>
+  <h1>달러 ETF<br><em>환율 수익 시뮬레이터</em></h1>
+  <p>환차익과 ETF 수익을 분리해서 계산합니다<br>ISA / 일반 계좌 세금 차이도 비교해 드립니다</p>
+  <div class="year-tag">SOFR · 달러인덱스 · S&P500 달러 ETF</div>
+</header>
+
+<div class="container">
+
+  <!-- STEP 1: 환율 입력 -->
+  <div class="section">
+    <div class="section-title">STEP 1 &nbsp;환율 입력</div>
+    <div class="card">
+      <div class="form-row">
+        <div class="form-group">
+          <label>매수 환율 <span class="sub">샀을 때</span></label>
+          <div class="input-wrap">
+            <input type="number" id="buyRate" placeholder="1380" min="800" max="2000" step="1"
+                   oninput="onRateInput()">
+            <span class="unit">원</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>현재 환율 <span class="sub">지금</span></label>
+          <div class="input-wrap">
+            <input type="number" id="curRate" placeholder="1480" min="800" max="2000" step="1"
+                   oninput="onRateInput()">
+            <span class="unit">원</span>
+          </div>
+        </div>
+      </div>
+      <div class="fx-diff" id="fxDiff">환율을 입력하면 차이를 보여드립니다</div>
+    </div>
+  </div>
+
+  <!-- STEP 2: 투자금 & ETF 수익률 -->
+  <div class="section">
+    <div class="section-title">STEP 2 &nbsp;투자금 · ETF 수익률</div>
+    <div class="card">
+      <div class="form-group">
+        <label>투자 원금 <span class="sub">원화 기준</span></label>
+        <div class="input-wrap">
+          <input type="number" id="principal" placeholder="10000" min="0" step="100">
+          <span class="unit">만원</span>
+        </div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label-row">
+          <label>ETF 수익률 <span class="sub">달러 기준 연 수익률</span></label>
+          <div class="slider-val" id="etfRateDisplay">0.0%</div>
+        </div>
+        <input type="range" id="etfRate" min="-30" max="50" step="0.5" value="0"
+               oninput="onEtfSlider()">
+        <div class="input-hint" id="etfHint" style="margin-top:6px;">SOFR ETF: 약 4~5% / S&P500 ETF: 연 평균 약 10% (변동 큼)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: 계좌 종류 -->
+  <div class="section">
+    <div class="section-title">STEP 3 &nbsp;계좌 종류 선택</div>
+    <div class="card">
+      <div class="tab-group">
+        <button class="tab-btn" id="tab-isa" onclick="setAccount('isa')">ISA 계좌</button>
+        <button class="tab-btn active" id="tab-irp" onclick="setAccount('irp')">IRP·연금저축</button>
+        <button class="tab-btn" id="tab-gen" onclick="setAccount('gen')">일반 계좌</button>
+      </div>
+      <div id="acct-desc" style="font-size:12px; color:var(--text2); line-height:1.7;"></div>
+    </div>
+  </div>
+
+  <button class="btn-calc" onclick="calculate()">💵 수익 계산하기</button>
+
+  <!-- RESULT -->
+  <div id="result">
+
+    <!-- 메인 결과 -->
+    <div class="result-main fade-up">
+      <div class="label">세후 총 수익 (예상)</div>
+      <div class="total-profit" id="res-total-profit">—</div>
+      <div class="rate-row">
+        <span class="rate-chip neu" id="res-total-rate">수익률 —</span>
+        <span class="rate-chip" id="res-fx-chip">환차익 —</span>
+        <span class="rate-chip" id="res-etf-chip">ETF —</span>
+      </div>
+    </div>
+
+    <!-- 수익 분해 -->
+    <div class="breakdown-grid fade-up">
+      <div class="bd-card">
+        <div class="bd-label">환차익 / 환차손</div>
+        <div class="bd-val" id="res-fx">—</div>
+        <div class="bd-sub" id="res-fx-rate">—</div>
+      </div>
+      <div class="bd-card">
+        <div class="bd-label">ETF 수익 (달러 기준)</div>
+        <div class="bd-val gold" id="res-etf">—</div>
+        <div class="bd-sub" id="res-etf-krw">—</div>
+      </div>
+      <div class="bd-card">
+        <div class="bd-label">세전 총 수익</div>
+        <div class="bd-val" id="res-gross">—</div>
+        <div class="bd-sub" id="res-gross-rate">—</div>
+      </div>
+      <div class="bd-card">
+        <div class="bd-label">세금 차감</div>
+        <div class="bd-val neg" id="res-tax">—</div>
+        <div class="bd-sub" id="res-tax-rate">—</div>
+      </div>
+    </div>
+
+    <!-- 상세 내역 -->
+    <div class="detail-table fade-up">
+      <div class="dt-head">📋 계산 내역</div>
+      <div class="dt-row">
+        <span class="dt-label">투자 원금 (원화)</span>
+        <span class="dt-val gold" id="dt-principal">—</span>
+      </div>
+      <div class="dt-row">
+        <span class="dt-label">매수 시 달러 환산</span>
+        <span class="dt-val" id="dt-dollars">—</span>
+      </div>
+      <div class="dt-row">
+        <span class="dt-label">ETF 수익 후 달러 가치</span>
+        <span class="dt-val" id="dt-dollars-after">—</span>
+      </div>
+      <div class="dt-row">
+        <span class="dt-label">현재 환율로 원화 환산</span>
+        <span class="dt-val" id="dt-krw-after">—</span>
+      </div>
+      <div class="dt-row">
+        <span class="dt-label">환율 변동 효과</span>
+        <span class="dt-val" id="dt-fx">—</span>
+      </div>
+      <div class="dt-row">
+        <span class="dt-label">ETF 수익 효과 (원화)</span>
+        <span class="dt-val" id="dt-etf-krw">—</span>
+      </div>
+      <div class="dt-row total">
+        <span class="dt-label">세후 순수익</span>
+        <span class="dt-val pos" id="dt-net">—</span>
+      </div>
+    </div>
+
+    <!-- 계좌별 세금 비교 -->
+    <div class="tax-compare fade-up">
+      <div class="tc-head">💡 계좌별 세금 비교</div>
+      <div class="tc-row">
+        <span class="tc-label">ISA 계좌 (서민형 비과세 200만원 초과분 9.9%)</span>
+        <span class="tc-val" id="tc-isa">—</span>
+      </div>
+      <div class="tc-row">
+        <span class="tc-label">IRP·연금저축 (수령 시까지 과세 이연)</span>
+        <span class="tc-val" id="tc-irp">세금 0원 (이연)</span>
+      </div>
+      <div class="tc-row">
+        <span class="tc-label">일반 계좌 (배당·매매차익 15.4%)</span>
+        <span class="tc-val" id="tc-gen">—</span>
+      </div>
+    </div>
+
+    <div class="tip-box fade-up">
+      <div><strong>💡 달러 ETF 투자 활용 팁</strong></div>
+      <div>📌 SOFR ETF는 IRP에서 <strong>안전자산으로 인정</strong>돼 30% 의무 비중 충족에 활용 가능합니다</div>
+      <div>📌 환율이 오를 때(원화 약세)는 환차익이 수익을 키우고, 내릴 때는 ETF 수익을 깎습니다</div>
+      <div>📌 <strong>ISA 계좌</strong>는 서민형 기준 200만원까지 비과세, 초과분은 9.9% 분리과세로 절세 효과가 큽니다</div>
+      <div>📌 IRP·연금저축 내 달러 ETF는 수령 전까지 세금이 없어 복리 효과가 극대화됩니다</div>
+    </div>
+
+    <div class="disclaimer">
+      ⚠️ 이 계산기는 참고용 도구이며 투자 권유가 아닙니다. 실제 수익은 환율·ETF 가격 변동에 따라 달라집니다.
+    </div>
+
+  </div><!-- /result -->
+
+</div><!-- /container -->
+
+<footer>
+  <p>만든 사람: <a href="https://dalbong.tistory.com" target="_blank">달봉이의 IT / 재테크 / 육아 큐레이션</a></p>
+  <p><a href="https://candoism82-bit.github.io/dalbong/" target="_blank">← 금융 계산기 모음으로 돌아가기</a></p>
+  <p style="margin-top:4px; color:#2a2210;">© 2026 dalbong — 광고 없음 · 데이터 수집 없음</p>
+</footer>
+
+<script>
+// ── 계좌 종류 ──
+let acctType = 'irp';
+
+const ACCT_DESC = {
+  isa: '서민형 ISA 기준 — 수익 200만원까지 비과세, 초과분 9.9% 분리과세. 달러 ETF 매매차익에도 유리합니다.',
+  irp: 'IRP·연금저축 내 달러 ETF는 수령 전까지 세금이 없습니다. 운용 중 배당·매매차익 모두 과세 이연 적용.',
+  gen: '일반 계좌 — 매매차익은 비과세지만 분배금(배당)에 15.4% 원천징수. SOFR ETF는 분배금 중심이므로 세금 영향이 큽니다.',
+};
+
+function setAccount(type) {
+  acctType = type;
+  ['isa','irp','gen'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t === type);
+  });
+  document.getElementById('acct-desc').textContent = ACCT_DESC[type];
+}
+setAccount('irp');
+
+// ── 환율 인디케이터 ──
+function onRateInput() {
+  const buy = parseFloat(document.getElementById('buyRate').value) || 0;
+  const cur = parseFloat(document.getElementById('curRate').value) || 0;
+  const el  = document.getElementById('fxDiff');
+  if (!buy || !cur) {
+    el.className = 'fx-diff';
+    el.textContent = '환율을 입력하면 차이를 보여드립니다';
+    return;
+  }
+  const diff = cur - buy;
+  const pct  = (diff / buy * 100).toFixed(2);
+  if (diff > 0) {
+    el.className = 'fx-diff up';
+    el.innerHTML = `환율 상승 (원화 약세) &nbsp;▲ ${fmt(Math.round(diff))}원 / ${pct}%`;
+  } else if (diff < 0) {
+    el.className = 'fx-diff down';
+    el.innerHTML = `환율 하락 (원화 강세) &nbsp;▼ ${fmt(Math.round(Math.abs(diff)))}원 / ${Math.abs(pct)}%`;
+  } else {
+    el.className = 'fx-diff';
+    el.textContent = '환율 변동 없음';
+  }
+}
+
+// ── ETF 슬라이더 ──
+function onEtfSlider() {
+  const v = parseFloat(document.getElementById('etfRate').value);
+  document.getElementById('etfRateDisplay').textContent = (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
+  const hint = document.getElementById('etfHint');
+  if (v >= 15)      { hint.textContent = 'S&P500 ETF 강세장 수준 — 기대 수익률이 높습니다'; hint.className = 'input-hint up'; }
+  else if (v >= 4)  { hint.textContent = 'SOFR ETF 또는 안정적 채권 ETF 수준'; hint.className = 'input-hint'; }
+  else if (v >= 0)  { hint.textContent = 'SOFR ETF: 약 4~5% / S&P500 ETF: 연 평균 약 10% (변동 큼)'; hint.className = 'input-hint'; }
+  else              { hint.textContent = '손실 구간 — 환차익이 이를 상쇄할 수 있습니다'; hint.className = 'input-hint down'; }
+}
+
+// ── 세금 계산 ──
+function calcTax(grossProfit, type) {
+  if (grossProfit <= 0) return 0;
+  if (type === 'irp') return 0; // 이연
+  if (type === 'isa') {
+    const exempt = 200 * 10000; // 200만원 비과세
+    const taxable = Math.max(0, grossProfit - exempt);
+    return Math.round(taxable * 0.099);
+  }
+  // 일반: 15.4% (SOFR ETF 분배금 기준 — 보수적 추정)
+  return Math.round(grossProfit * 0.154);
+}
+
+// ── 핵심 계산 ──
+function calculate() {
+  const buyRate   = parseFloat(document.getElementById('buyRate').value)   || 0;
+  const curRate   = parseFloat(document.getElementById('curRate').value)   || 0;
+  const principal = parseFloat(document.getElementById('principal').value) || 0;
+  const etfRate   = parseFloat(document.getElementById('etfRate').value)   || 0;
+
+  if (!buyRate || !curRate || !principal) {
+    alert('환율과 투자 원금을 모두 입력해주세요.');
+    return;
+  }
+
+  const principalKrw = principal * 10000;
+
+  // 계산
+  const dollars      = principalKrw / buyRate;                        // 매수 시 달러
+  const dollarsAfter = dollars * (1 + etfRate / 100);                 // ETF 수익 후 달러
+  const krwAfter     = dollarsAfter * curRate;                        // 현재 환율로 원화 환산
+  const grossProfit  = krwAfter - principalKrw;                      // 세전 총 수익
+  const fxProfit     = dollars * (curRate - buyRate);                 // 환차익
+  const etfProfitDollar = dollars * (etfRate / 100);                 // ETF 수익 (달러)
+  const etfProfitKrw  = etfProfitDollar * curRate;                   // ETF 수익 (원화)
+
+  const tax     = calcTax(Math.max(0, grossProfit), acctType);
+  const netProfit = grossProfit - tax;
+  const netRate   = (netProfit / principalKrw * 100);
+  const grossRate = (grossProfit / principalKrw * 100);
+
+  // ISA, IRP, 일반 세금 비교
+  const taxIsa = calcTax(Math.max(0, grossProfit), 'isa');
+  const taxGen = calcTax(Math.max(0, grossProfit), 'gen');
+
+  // ── UI 업데이트 ──
+  document.getElementById('result').style.display = 'block';
+
+  const profitEl = document.getElementById('res-total-profit');
+  profitEl.className = 'total-profit ' + (netProfit >= 0 ? 'pos' : 'neg');
+  profitEl.innerHTML = fmtKrw(netProfit) + '<span class="unit">원</span>';
+
+  document.getElementById('res-total-rate').textContent = '수익률 ' + (netRate >= 0 ? '+' : '') + netRate.toFixed(2) + '%';
+
+  const fxChip = document.getElementById('res-fx-chip');
+  fxChip.className = 'rate-chip ' + (fxProfit >= 0 ? 'pos' : 'neg');
+  fxChip.textContent = '환차익 ' + (fxProfit >= 0 ? '+' : '') + fmtK(fxProfit);
+
+  const etfChip = document.getElementById('res-etf-chip');
+  etfChip.className = 'rate-chip ' + (etfProfitKrw >= 0 ? 'pos' : 'neg');
+  etfChip.textContent = 'ETF ' + (etfProfitKrw >= 0 ? '+' : '') + fmtK(etfProfitKrw);
+
+  // 분해 카드
+  const fxEl = document.getElementById('res-fx');
+  fxEl.className = 'bd-val ' + (fxProfit >= 0 ? 'pos' : 'neg');
+  fxEl.textContent = fmtKrw(fxProfit);
+  document.getElementById('res-fx-rate').textContent = (fxProfit/principalKrw*100).toFixed(2) + '%';
+
+  const etfEl = document.getElementById('res-etf');
+  etfEl.className = 'bd-val gold';
+  etfEl.textContent = fmtDollar(etfProfitDollar);
+  document.getElementById('res-etf-krw').textContent = '≈ ' + fmtKrw(etfProfitKrw);
+
+  const grossEl = document.getElementById('res-gross');
+  grossEl.className = 'bd-val ' + (grossProfit >= 0 ? 'pos' : 'neg');
+  grossEl.textContent = fmtKrw(grossProfit);
+  document.getElementById('res-gross-rate').textContent = (grossRate >= 0 ? '+' : '') + grossRate.toFixed(2) + '%';
+
+  document.getElementById('res-tax').textContent = tax > 0 ? '-' + fmtKrw(tax) : '0원';
+  document.getElementById('res-tax-rate').textContent =
+    acctType === 'irp' ? '과세 이연 (수령 시 저율)' :
+    acctType === 'isa' ? '200만 비과세 + 초과 9.9%' : '15.4%';
+
+  // 상세 내역
+  document.getElementById('dt-principal').textContent = fmtKrw(principalKrw);
+  document.getElementById('dt-dollars').textContent   = fmtDollar(dollars);
+  document.getElementById('dt-dollars-after').textContent = fmtDollar(dollarsAfter);
+  document.getElementById('dt-krw-after').textContent  = fmtKrw(krwAfter);
+
+  const dtFx = document.getElementById('dt-fx');
+  dtFx.className = 'dt-val ' + (fxProfit >= 0 ? 'pos' : 'neg');
+  dtFx.textContent = fmtKrw(fxProfit);
+
+  const dtEtf = document.getElementById('dt-etf-krw');
+  dtEtf.className = 'dt-val gold';
+  dtEtf.textContent = fmtKrw(etfProfitKrw);
+
+  const dtNet = document.getElementById('dt-net');
+  dtNet.className = 'dt-val ' + (netProfit >= 0 ? 'pos' : 'neg');
+  dtNet.textContent = fmtKrw(netProfit);
+
+  // 계좌 비교
+  document.getElementById('tc-isa').textContent = grossProfit <= 0 ? '0원' :
+    (grossProfit <= 200*10000 ? '비과세 (0원)' : '-' + fmtKrw(taxIsa) + ' (절세!)');
+  document.getElementById('tc-gen').textContent = '-' + fmtKrw(taxGen);
+
+  setTimeout(() => {
+    document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 100);
+}
+
+// ── 유틸 ──
+function fmt(n)        { return Number(n).toLocaleString('ko-KR'); }
+function fmtKrw(n)     { return (n >= 0 ? '' : '-') + fmt(Math.abs(Math.round(n))) + '원'; }
+function fmtK(n)       { return fmt(Math.round(Math.abs(n)/10000)) + '만'; }
+function fmtDollar(n)  { return '$' + Number(Math.abs(n)).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0}); }
+</script>
+</body>
+</html>

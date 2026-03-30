@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISA 절세 효과 비교 계산기 | 달봉이의 금융 도구</title>
+<meta name="description" content="일반 계좌 vs ISA 계좌에서 ETF 투자 시 세금 차이를 한눈에 비교합니다.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #090d14;
+  --bg2:      #0e1520;
+  --bg3:      #131c2a;
+  --card:     #101828;
+  --card2:    #162030;
+  --border:   #1e2f45;
+  --blue:     #4a90d9;
+  --blue-d:   #1a3a6a;
+  --blue-dk:  #091428;
+  --blue-lt:  #7ab8f5;
+  --teal:     #3dc9a0;
+  --red:      #e85a4d;
+  --amber:    #e8a820;
+  --text:     #d0e0f0;
+  --text2:    #6888a8;
+  --text3:    #2a4060;
+  --white:    #ffffff;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding-bottom:60px; }
+
+header {
+  background: linear-gradient(135deg, var(--bg2), var(--bg3));
+  border-bottom:1px solid var(--border);
+  padding:30px 20px 26px; text-align:center;
+  position:relative; overflow:hidden;
+}
+header::before {
+  content:'🛡';
+  position:absolute; right:10px; top:10px;
+  font-size:120px; opacity:.04; pointer-events:none;
+}
+.badge { display:inline-block; background:var(--blue-dk); color:var(--blue); font-size:11px; font-weight:700; letter-spacing:.08em; padding:3px 12px; border-radius:20px; margin-bottom:12px; border:1px solid var(--blue-d); }
+header h1 { font-size:clamp(20px,5vw,28px); font-weight:700; color:var(--white); line-height:1.3; margin-bottom:8px; }
+header h1 em { font-style:normal; color:var(--blue-lt); }
+header p { font-size:13px; color:var(--text2); line-height:1.7; }
+.year-tag { display:inline-block; font-family:'DM Mono',monospace; font-size:11px; color:var(--text3); margin-top:8px; }
+
+.container { max-width:680px; margin:0 auto; padding:0 16px; }
+.section { margin-top:20px; }
+.section-title { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--blue); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+.section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+.card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:12px; }
+
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.form-group { margin-bottom:18px; }
+.form-group:last-child { margin-bottom:0; }
+label { display:block; font-size:13px; font-weight:500; color:var(--text); margin-bottom:6px; }
+label .sub { font-size:11px; font-weight:400; color:var(--text3); margin-left:5px; }
+.input-wrap { position:relative; display:flex; align-items:center; }
+.input-wrap input { width:100%; background:var(--bg); border:1.5px solid var(--border); border-radius:8px; color:var(--text); font-family:'DM Mono',monospace; font-size:15px; font-weight:500; padding:10px 46px 10px 14px; outline:none; transition:all .15s; -webkit-appearance:none; }
+.input-wrap input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(74,144,217,.12); }
+.input-wrap input::placeholder { color:var(--text3); font-size:13px; }
+.input-wrap .unit { position:absolute; right:12px; font-size:12px; color:var(--text3); pointer-events:none; }
+.input-hint { font-size:11px; color:var(--text3); margin-top:5px; line-height:1.5; }
+
+.slider-group { margin-bottom:18px; }
+.slider-label-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.slider-label-row label { margin-bottom:0; }
+.slider-val { font-family:'DM Mono',monospace; font-size:14px; font-weight:600; color:var(--blue-lt); }
+input[type=range] { -webkit-appearance:none; width:100%; height:4px; background:var(--border); border-radius:2px; outline:none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; background:var(--blue); border-radius:50%; cursor:pointer; box-shadow:0 0 6px rgba(74,144,217,.4); transition:transform .1s; }
+input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.2); }
+
+/* ISA 타입 탭 */
+.tab-group { display:flex; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:4px; gap:4px; margin-bottom:16px; }
+.tab-btn { flex:1; padding:8px; border:none; border-radius:6px; background:transparent; color:var(--text2); font-size:11px; font-weight:600; font-family:'Noto Sans KR',sans-serif; cursor:pointer; transition:all .15s; text-align:center; line-height:1.4; }
+.tab-btn.active { background:var(--blue-dk); color:var(--blue-lt); }
+
+.btn-calc { width:100%; padding:14px; background:var(--blue); color:var(--bg); font-size:15px; font-weight:700; font-family:'Noto Sans KR',sans-serif; border:none; border-radius:8px; cursor:pointer; margin-top:4px; transition:all .15s; box-shadow:0 2px 14px rgba(74,144,217,.3); letter-spacing:.02em; }
+.btn-calc:hover { background:var(--blue-lt); transform:translateY(-1px); }
+
+/* Result */
+#result { display:none; margin-top:20px; }
+
+/* 절세 금액 메인 */
+.result-main { background:linear-gradient(135deg, var(--card), var(--card2)); border:1px solid var(--border); border-radius:12px; padding:22px; margin-bottom:12px; position:relative; overflow:hidden; }
+.result-main::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 80% 60% at 80% 50%, rgba(74,144,217,.06) 0%, transparent 70%); pointer-events:none; }
+.result-main .label { font-size:12px; color:var(--text2); margin-bottom:6px; }
+.result-main .main-val { font-family:'DM Mono',monospace; font-size:clamp(28px,7vw,40px); font-weight:500; color:var(--teal); line-height:1.1; }
+.result-main .main-val .unit { font-size:16px; opacity:.7; margin-left:4px; }
+.chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.chip { display:inline-flex; align-items:center; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:700; font-family:'DM Mono',monospace; }
+.chip.teal  { background:rgba(61,201,160,.12); color:var(--teal); }
+.chip.blue  { background:rgba(74,144,217,.12);  color:var(--blue-lt); }
+.chip.amber { background:rgba(232,168,32,.12);  color:var(--amber); }
+
+/* 비교 카드 2열 */
+.compare-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+.compare-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; }
+.compare-card.highlight { border-color:var(--blue); background:var(--blue-dk); }
+.compare-card .cc-title { font-size:12px; font-weight:700; color:var(--text2); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.compare-card.highlight .cc-title { color:var(--blue-lt); }
+.compare-card .cc-row { display:flex; justify-content:space-between; font-size:12px; padding:4px 0; border-bottom:1px solid var(--border); }
+.compare-card .cc-row:last-child { border-bottom:none; }
+.compare-card .cc-row .cv { font-family:'DM Mono',monospace; font-weight:600; }
+.compare-card .cc-row .cv.red  { color:var(--red); }
+.compare-card .cc-row .cv.teal { color:var(--teal); }
+.compare-card .cc-row .cv.blue { color:var(--blue-lt); }
+.compare-card .cc-row .cv.gold { color:var(--amber); }
+
+/* 기간별 절세 효과 표 */
+.year-table { background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:12px; }
+.year-table .yt-head { background:var(--card2); padding:9px 16px; font-size:10px; font-weight:700; letter-spacing:.06em; color:var(--text3); text-transform:uppercase; border-bottom:1px solid var(--border); }
+.yt-row { display:grid; grid-template-columns:60px 1fr 1fr 1fr; padding:10px 16px; border-bottom:1px solid var(--border); font-size:12px; align-items:center; }
+.yt-row:last-child { border-bottom:none; }
+.yt-row.head { background:var(--bg2); font-weight:700; font-size:11px; color:var(--text3); letter-spacing:.04em; text-transform:uppercase; }
+.yt-row .yc { font-family:'DM Mono',monospace; }
+.yt-row .yc.teal { color:var(--teal); font-weight:600; }
+.yt-row .yc.red  { color:var(--red); }
+
+/* 절세 바 */
+.save-bar { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px; margin-bottom:12px; }
+.save-bar-title { font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--text3); text-transform:uppercase; margin-bottom:14px; }
+.sb-row { margin-bottom:12px; }
+.sb-row:last-child { margin-bottom:0; }
+.sb-label { display:flex; justify-content:space-between; font-size:12px; color:var(--text2); margin-bottom:5px; }
+.sb-label .sb-val { font-family:'DM Mono',monospace; font-weight:600; }
+.bar-track { background:var(--border); border-radius:3px; height:8px; overflow:hidden; }
+.bar-fill { height:100%; border-radius:3px; transition:width .6s ease; }
+.bar-fill.gen  { background:var(--red); }
+.bar-fill.isa  { background:var(--blue); }
+.bar-fill.save { background:var(--teal); }
+
+.tip-box { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; font-size:12px; line-height:1.9; color:var(--text2); margin-bottom:12px; }
+.tip-box strong { color:var(--blue-lt); }
+.disclaimer { background:rgba(232,90,77,.06); border-left:3px solid rgba(232,90,77,.3); border-radius:6px; padding:12px 16px; font-size:12px; color:#a06060; line-height:1.7; }
+
+footer { text-align:center; margin-top:28px; font-size:11px; color:var(--text3); line-height:1.9; }
+footer a { color:var(--blue); text-decoration:none; }
+
+@keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+.fade-up { animation:fadeUp .35s ease both; }
+.fade-up:nth-child(2) { animation-delay:.06s; }
+.fade-up:nth-child(3) { animation-delay:.12s; }
+.fade-up:nth-child(4) { animation-delay:.18s; }
+
+@media (max-width:480px) {
+  .form-row { grid-template-columns:1fr; }
+  .compare-row { grid-template-columns:1fr; }
+  .yt-row { grid-template-columns:50px 1fr 1fr; }
+  .yt-row .yc:last-child { display:none; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">🛡️ 금융 계산기</div>
+  <h1>ISA 절세 효과<br><em>비교 계산기</em></h1>
+  <p>일반 계좌 vs ISA 계좌에서 같은 금액 투자 시<br>세금 차이와 절세 효과를 한눈에 비교합니다</p>
+  <div class="year-tag">서민형 · 일반형 · 2026년 기준</div>
+</header>
+
+<div class="container">
+
+  <!-- STEP 1: 투자 정보 -->
+  <div class="section">
+    <div class="section-title">STEP 1 &nbsp;투자 정보</div>
+    <div class="card">
+      <div class="form-row">
+        <div class="form-group">
+          <label>투자 원금</label>
+          <div class="input-wrap">
+            <input type="number" id="principal" placeholder="5000" min="100" step="100">
+            <span class="unit">만원</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>투자 기간</label>
+          <div class="input-wrap">
+            <input type="number" id="years" placeholder="5" min="1" max="30" value="5">
+            <span class="unit">년</span>
+          </div>
+          <div class="input-hint">ISA 의무 가입 기간: 최소 3년</div>
+        </div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-label-row">
+          <label>연 수익률 <span class="sub">세전 기준</span></label>
+          <div class="slider-val" id="rateDisplay">7.0%</div>
+        </div>
+        <input type="range" id="annualRate" min="1" max="20" step="0.5" value="7" oninput="onRateSlider()">
+        <div class="input-hint" id="rateHint">혼합 포트폴리오(주식+채권) 기대 수준</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: ISA 유형 -->
+  <div class="section">
+    <div class="section-title">STEP 2 &nbsp;ISA 유형 선택</div>
+    <div class="card">
+      <div class="tab-group">
+        <button class="tab-btn active" id="tab-seo" onclick="setIsa('seo')">서민형<br><small>비과세 200만원</small></button>
+        <button class="tab-btn" id="tab-gen" onclick="setIsa('gen')">일반형<br><small>비과세 200만원</small></button>
+        <button class="tab-btn" id="tab-inv" onclick="setIsa('inv')">투자형<br><small>비과세 한도 없음</small></button>
+      </div>
+      <div id="isa-desc" style="font-size:12px; color:var(--text2); line-height:1.7;"></div>
+    </div>
+  </div>
+
+  <button class="btn-calc" onclick="calculate()">🛡️ 절세 효과 계산하기</button>
+
+  <!-- RESULT -->
+  <div id="result">
+
+    <!-- 메인: 절세 금액 -->
+    <div class="result-main fade-up">
+      <div class="label">ISA 계좌 절세 효과 (일반 계좌 대비)</div>
+      <div class="main-val" id="res-save">—<span class="unit">원</span></div>
+      <div class="chip-row">
+        <span class="chip teal" id="res-save-rate">절세율 —</span>
+        <span class="chip blue" id="res-net-chip">ISA 세후 —</span>
+        <span class="chip amber" id="res-gen-chip">일반 세후 —</span>
+      </div>
+    </div>
+
+    <!-- 계좌별 비교 -->
+    <div class="compare-row fade-up">
+      <div class="compare-card">
+        <div class="cc-title">📋 일반 계좌</div>
+        <div class="cc-row"><span>세전 수익</span><span class="cv gold" id="gen-gross">—</span></div>
+        <div class="cc-row"><span>세금 (15.4%)</span><span class="cv red" id="gen-tax">—</span></div>
+        <div class="cc-row"><span>세후 수익</span><span class="cv" id="gen-net">—</span></div>
+        <div class="cc-row"><span>세후 총자산</span><span class="cv" id="gen-total">—</span></div>
+      </div>
+      <div class="compare-card highlight">
+        <div class="cc-title">🛡️ ISA 계좌</div>
+        <div class="cc-row"><span>세전 수익</span><span class="cv gold" id="isa-gross">—</span></div>
+        <div class="cc-row"><span>세금</span><span class="cv teal" id="isa-tax">—</span></div>
+        <div class="cc-row"><span>세후 수익</span><span class="cv teal" id="isa-net">—</span></div>
+        <div class="cc-row"><span>세후 총자산</span><span class="cv blue" id="isa-total">—</span></div>
+      </div>
+    </div>
+
+    <!-- 절세 시각화 막대 -->
+    <div class="save-bar fade-up">
+      <div class="save-bar-title">💰 세금 비교 시각화</div>
+      <div class="sb-row">
+        <div class="sb-label"><span>일반 계좌 세금</span><span class="sb-val" id="sb-gen">—</span></div>
+        <div class="bar-track"><div class="bar-fill gen" id="sb-gen-bar" style="width:0%"></div></div>
+      </div>
+      <div class="sb-row">
+        <div class="sb-label"><span>ISA 계좌 세금</span><span class="sb-val" id="sb-isa">—</span></div>
+        <div class="bar-track"><div class="bar-fill isa" id="sb-isa-bar" style="width:0%"></div></div>
+      </div>
+      <div class="sb-row">
+        <div class="sb-label"><span>절세 효과</span><span class="sb-val" id="sb-save">—</span></div>
+        <div class="bar-track"><div class="bar-fill save" id="sb-save-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- 기간별 절세 효과 -->
+    <div class="year-table fade-up">
+      <div class="yt-head">📅 기간별 절세 효과 비교</div>
+      <div class="yt-row head">
+        <span>기간</span>
+        <span>일반 세금</span>
+        <span>ISA 세금</span>
+        <span>절세 효과</span>
+      </div>
+      <div id="yt-body"></div>
+    </div>
+
+    <div class="tip-box fade-up">
+      <div><strong>💡 ISA 계좌 활용 핵심 팁</strong></div>
+      <div>📌 ISA 만기 후 <strong>연금저축·IRP로 이전</strong> 시 이전 금액의 10%(최대 300만원) 추가 세액공제!</div>
+      <div>📌 ISA 비과세 한도는 <strong>연간이 아니라 전체 기간</strong> 기준 — 오래 투자할수록 절세 효과 극대화</div>
+      <div>📌 국내 상장 ETF(달러 ETF, 국채 ETF 등)는 ISA에서 매매차익도 비과세 처리</div>
+      <div>📌 <strong>투자형 ISA</strong>는 비과세 한도 없이 전체 수익에 9.9% 분리과세 — 고수익 투자자에게 유리</div>
+    </div>
+
+    <div class="disclaimer">
+      ⚠️ 이 계산기는 참고용 도구입니다. 실제 세금은 투자 상품 유형과 개인 상황에 따라 달라질 수 있습니다.
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  <p>만든 사람: <a href="https://dalbong.tistory.com" target="_blank">달봉이의 IT / 재테크 / 육아 큐레이션</a></p>
+  <p><a href="https://candoism82-bit.github.io/dalbong/" target="_blank">← 금융 계산기 모음으로 돌아가기</a></p>
+  <p style="margin-top:4px; color:#0a1020;">© 2026 dalbong — 광고 없음 · 데이터 수집 없음</p>
+</footer>
+
+<script>
+let isaType = 'seo';
+
+const ISA_DESC = {
+  seo: '서민형 ISA — 총급여 5,000만원 이하 또는 종합소득 3,800만원 이하. 비과세 200만원 + 초과분 9.9% 분리과세.',
+  gen: '일반형 ISA — 소득 제한 없음. 비과세 200만원 + 초과분 9.9% 분리과세. 서민형과 세금 구조 동일.',
+  inv: '투자형 ISA — 2025년 신설. 비과세 한도 없이 전체 수익에 9.9% 분리과세. 수익이 클수록 절세 효과 극대화.',
+};
+
+// ISA별 세금 계산
+function calcIsaTax(grossProfit, type) {
+  if (grossProfit <= 0) return 0;
+  if (type === 'inv') {
+    return Math.round(grossProfit * 0.099);
+  }
+  // 서민형/일반형: 200만원 비과세
+  const exempt  = 200 * 10000;
+  const taxable = Math.max(0, grossProfit - exempt);
+  return Math.round(taxable * 0.099);
+}
+
+function calcGenTax(grossProfit) {
+  if (grossProfit <= 0) return 0;
+  return Math.round(grossProfit * 0.154);
+}
+
+function setIsa(type) {
+  isaType = type;
+  ['seo','gen','inv'].forEach(t => document.getElementById('tab-'+t).classList.toggle('active', t===type));
+  document.getElementById('isa-desc').textContent = ISA_DESC[type];
+}
+setIsa('seo');
+
+function onRateSlider() {
+  const v = parseFloat(document.getElementById('annualRate').value);
+  document.getElementById('rateDisplay').textContent = v.toFixed(1) + '%';
+  const hint = document.getElementById('rateHint');
+  if (v >= 12)    { hint.textContent = '주식 중심 공격적 포트폴리오 수준 — 변동성 큼'; }
+  else if (v >= 7){ hint.textContent = '혼합 포트폴리오(주식+채권) 기대 수준'; }
+  else if (v >= 4){ hint.textContent = 'SOFR·채권 ETF 기반 안정형 수준'; }
+  else            { hint.textContent = '예금·안전자산 중심 보수적 수준'; }
+}
+
+function calcCompound(principal, rate, years) {
+  return principal * Math.pow(1 + rate / 100, years);
+}
+
+function calculate() {
+  const principal = parseFloat(document.getElementById('principal').value) || 0;
+  const years     = parseInt(document.getElementById('years').value) || 5;
+  const rate      = parseFloat(document.getElementById('annualRate').value);
+
+  if (!principal) { alert('투자 원금을 입력해주세요.'); return; }
+
+  const principalKrw = principal * 10000;
+  const finalVal     = calcCompound(principalKrw, rate, years);
+  const grossProfit  = finalVal - principalKrw;
+
+  const genTax  = calcGenTax(grossProfit);
+  const isaTax  = calcIsaTax(grossProfit, isaType);
+  const saved   = genTax - isaTax;
+  const genNet  = grossProfit - genTax;
+  const isaNet  = grossProfit - isaTax;
+  const saveRate = grossProfit > 0 ? (saved / genTax * 100) : 0;
+
+  document.getElementById('result').style.display = 'block';
+
+  document.getElementById('res-save').innerHTML = fmtKrw(saved) + '<span class="unit">원</span>';
+  document.getElementById('res-save-rate').textContent = '절세율 ' + saveRate.toFixed(0) + '%';
+  document.getElementById('res-net-chip').textContent  = 'ISA 세후 ' + fmtM(isaNet);
+  document.getElementById('res-gen-chip').textContent  = '일반 세후 ' + fmtM(genNet);
+
+  document.getElementById('gen-gross').textContent = fmtKrw(grossProfit);
+  document.getElementById('gen-tax').textContent   = '-' + fmtKrw(genTax);
+  document.getElementById('gen-net').textContent   = fmtKrw(genNet);
+  document.getElementById('gen-total').textContent = fmtKrw(finalVal - genTax);
+
+  const isaLabel = isaType === 'inv' ? '9.9% 분리과세' :
+    (isaTax === 0 ? '비과세 (200만원 이하)' : '-' + fmtKrw(isaTax));
+  document.getElementById('isa-tax').textContent   = isaTax > 0 ? '-' + fmtKrw(isaTax) : '0원 (비과세)';
+  document.getElementById('isa-net').textContent   = fmtKrw(isaNet);
+  document.getElementById('isa-total').textContent = fmtKrw(finalVal - isaTax);
+
+  // 막대 차트
+  const maxTax = Math.max(genTax, 1);
+  document.getElementById('sb-gen').textContent   = fmtKrw(genTax);
+  document.getElementById('sb-isa').textContent   = fmtKrw(isaTax);
+  document.getElementById('sb-save').textContent  = fmtKrw(saved);
+  setTimeout(() => {
+    document.getElementById('sb-gen-bar').style.width  = '100%';
+    document.getElementById('sb-isa-bar').style.width  = (isaTax / genTax * 100).toFixed(1) + '%';
+    document.getElementById('sb-save-bar').style.width = (saved / genTax * 100).toFixed(1) + '%';
+  }, 50);
+
+  // 기간별 표
+  const checkpoints = [1, 3, 5, 10, 15, 20].filter(y => y <= years);
+  if (!checkpoints.includes(years)) checkpoints.push(years);
+  const ytBody = document.getElementById('yt-body');
+  ytBody.innerHTML = checkpoints.map(y => {
+    const fv  = calcCompound(principalKrw, rate, y);
+    const gp  = fv - principalKrw;
+    const gt  = calcGenTax(gp);
+    const it  = calcIsaTax(gp, isaType);
+    const sv  = gt - it;
+    return `<div class="yt-row">
+      <span>${y}년</span>
+      <span class="yc red">-${fmtM(gt)}</span>
+      <span class="yc">${it > 0 ? '-' + fmtM(it) : '0원'}</span>
+      <span class="yc teal">+${fmtM(sv)}</span>
+    </div>`;
+  }).join('');
+
+  setTimeout(() => {
+    document.getElementById('result').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }, 100);
+}
+
+function fmt(n)    { return Number(n).toLocaleString('ko-KR'); }
+function fmtKrw(n) { return fmt(Math.round(Math.abs(n))) + '원'; }
+function fmtM(n)   { return fmt(Math.round(n / 10000)) + '만원'; }
+</script>
+</body>
+</html>
